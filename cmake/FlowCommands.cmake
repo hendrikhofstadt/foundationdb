@@ -68,28 +68,12 @@ function(generate_coverage_xml)
   elseif(type STREQUAL "EXECUTABLE")
     set(target_file ${EXECUTABLE_OUTPUT_PATH}/coverage.${target_name}.xml)
   endif()
-  if(WIN32)
-    add_custom_command(
-      OUTPUT ${target_file}
-      COMMAND $<TARGET_FILE:coveragetool> ${target_file} ${in_files}
-      DEPENDS ${in_files}
-      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMENT "Generate coverage xml")
-  elseif(CSHARP_USE_MONO)
-    add_custom_command(
-      OUTPUT ${target_file}
-      COMMAND ${MONO_EXECUTABLE} ${coveragetool_exe} ${target_file} ${in_files}
-      DEPENDS ${in_files}
-      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMENT "Generate coverage xml")
-  else()
-    add_custom_command(
-      OUTPUT ${target_file}
-      COMMAND ${coveragetool_exe} ${target_file} ${in_files}
-      DEPENDS ${in_files}
-      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMENT "Generate coverage xml")
-   endif()
+  add_custom_command(
+    OUTPUT ${target_file}
+    COMMAND ${coveragetool_exe} ${target_file} ${in_files}
+    DEPENDS ${in_files}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "Generate coverage xml")
   add_custom_target(coverage_${target_name} ALL DEPENDS ${target_file})
   add_dependencies(coverage_${target_name} coveragetool)
 endfunction()
@@ -263,24 +247,11 @@ function(add_flow_target)
         endforeach()
 
         list(APPEND generated_files ${out_file})
-        if(ACTORCOMPILER_CSHARP_COMMAND)
-          set(py_out_file "${out_file}.py_gen")
-          set(cs_out_file "${out_file}.cs_gen")
-          add_custom_command(OUTPUT "${out_file}"
-            COMMAND ${CMAKE_COMMAND} -E env "PYTHONPATH=${CMAKE_SOURCE_DIR}"
-                    ${ACTORCOMPILER_COMMAND} "${in_file}" "${py_out_file}" ${actor_compiler_flags}
-            COMMAND ${ACTORCOMPILER_CSHARP_COMMAND} "${in_file}" "${cs_out_file}" ${actor_compiler_flags}
-            COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/flow/actorcompiler_py/compare_actor_output.py "${cs_out_file}" "${py_out_file}"
-            COMMAND ${CMAKE_COMMAND} -E copy "${py_out_file}" "${out_file}"
-            DEPENDS "${in_file}" actorcompiler
-            COMMENT "Compile and compare actor: ${src}")
-        else()
-          add_custom_command(OUTPUT "${out_file}"
-            COMMAND ${CMAKE_COMMAND} -E env "PYTHONPATH=${CMAKE_SOURCE_DIR}"
-                    ${ACTORCOMPILER_COMMAND} "${in_file}" "${out_file}" ${actor_compiler_flags}
-            DEPENDS "${in_file}" actorcompiler
-            COMMENT "Compile actor: ${src}")
-        endif()
+        add_custom_command(OUTPUT "${out_file}"
+          COMMAND ${CMAKE_COMMAND} -E env "PYTHONPATH=${CMAKE_SOURCE_DIR}"
+                  ${ACTORCOMPILER_COMMAND} "${in_file}" "${out_file}" ${actor_compiler_flags}
+          DEPENDS "${in_file}" actorcompiler
+          COMMENT "Compile actor: ${src}")
       endif()
     endforeach()
     if(PASS_COMPILATION_UNIT)
